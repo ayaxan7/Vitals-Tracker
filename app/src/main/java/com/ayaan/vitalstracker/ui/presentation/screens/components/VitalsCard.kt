@@ -125,6 +125,6 @@ private fun formatDayAndDate(date: Date): String {
 }
 
 private fun formatTime(date: Date): String {
-    val formatter = SimpleDateFormat("HH:mm a", Locale.getDefault())
+    val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
     return formatter.format(date)
 }

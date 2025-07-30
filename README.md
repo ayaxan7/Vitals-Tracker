@@ -10,7 +10,7 @@
     </td>
     <td align="center">
       <strong>📸 Image</strong><br>
-      <img src="media/image2.jpeg" width="250" alt="Screenshot"/>
+      <img src="media/img.jpeg" width="250" alt="Screenshot"/>
     </td>
     <td align="center">
       <strong>📸 Image</strong><br>
