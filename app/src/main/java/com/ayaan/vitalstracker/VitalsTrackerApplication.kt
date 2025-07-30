@@ -4,7 +4,6 @@ import android.app.Application
 import android.util.Log
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.ayaan.vitalstracker.di.appModule
@@ -36,21 +35,17 @@ class VitalsTrackerApplication : Application() {
             .setRequiresStorageNotLow(false)
             .build()
 
-        val reminderWork = PeriodicWorkRequestBuilder<ReminderWorker>(
-            repeatInterval = 5,
-            repeatIntervalTimeUnit = TimeUnit.HOURS
-        )
-            .setConstraints(constraints)
-            .addTag("vitals_reminder")
-            .build()
+        val workRequest = PeriodicWorkRequestBuilder<ReminderWorker>(
+            5, TimeUnit.HOURS // Set to 5 hours for production
+        ).setConstraints(constraints).build()
 
-        Log.d("VitalsTrackerApplication", "workReminderOnjct: $reminderWork")
-
-
+        // Use KEEP policy to prevent rescheduling if work already exists
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             ReminderWorker.WORK_NAME,
-            ExistingPeriodicWorkPolicy.REPLACE,
-            reminderWork
+            ExistingPeriodicWorkPolicy.KEEP, // This prevents immediate execution on app restart
+            workRequest
         )
+
+        Log.d("VitalsTrackerApplication", "Scheduled vitals reminder with KEEP policy")
     }
 }
