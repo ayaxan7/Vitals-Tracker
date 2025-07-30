@@ -27,3 +27,6 @@
 
 - **Kotlin**
 - **Jetpack Compose**
+- **Room DB**
+- **Koin**
+- **Stateflow**

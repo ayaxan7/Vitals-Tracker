@@ -36,13 +36,11 @@ class VitalsTrackerApplication : Application() {
             .build()
 
         val workRequest = PeriodicWorkRequestBuilder<ReminderWorker>(
-            5, TimeUnit.HOURS // Set to 5 hours for production
+            5, TimeUnit.HOURS
         ).setConstraints(constraints).build()
-
-        // Use KEEP policy to prevent rescheduling if work already exists
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             ReminderWorker.WORK_NAME,
-            ExistingPeriodicWorkPolicy.KEEP, // This prevents immediate execution on app restart
+            ExistingPeriodicWorkPolicy.KEEP,
             workRequest
         )
 
