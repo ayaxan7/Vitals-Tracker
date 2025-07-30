@@ -1,7 +1,4 @@
-# ProfileUI
 
-A static profile screen Android application UI built using **Kotlin** and **Jetpack Compose**.
----
 
 ## 📸 Preview
 
@@ -11,15 +8,14 @@ A static profile screen Android application UI built using **Kotlin** and **Jetp
       <strong>📸 Image</strong><br>
       <img src="media/image1.jpeg" width="250" alt="Screenshot"/>
     </td>
-<td align="center">
+    <td align="center">
       <strong>📸 Image</strong><br>
       <img src="media/image2.jpeg" width="250" alt="Screenshot"/>
     </td>
-<td align="center">
+    <td align="center">
       <strong>📸 Image</strong><br>
       <img src="media/notif.jpeg" width="250" alt="Screenshot"/>
     </td>
-
     <td align="center">
       <strong>🎥 Video</strong><br>
       <img src="media/demo.gif" width="250" alt="Demo Video"/>
