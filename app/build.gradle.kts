@@ -62,6 +62,14 @@ dependencies {
 
     // WorkManager
     implementation(libs.androidx.work.runtime.ktx)
+        // Guava for ListenableFuture utilities
+        implementation ("com.google.guava:guava:31.0.1-android")
+
+        // AndroidX concurrent-futures for CallbackToFutureAdapter support
+        implementation ("androidx.concurrent:concurrent-futures:1.3.0")
+
+        // Optional: Kotlin coroutines interop
+        implementation( "org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.6.0")
 
     // ViewModel
     implementation(libs.androidx.lifecycle.viewmodel.compose)

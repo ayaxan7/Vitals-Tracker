@@ -1,13 +1,18 @@
 package com.ayaan.vitalstracker
 
 import android.app.Application
+import android.content.Context
 import android.util.Log
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.work.*
 import com.ayaan.vitalstracker.di.appModule
 import com.ayaan.vitalstracker.worker.ReminderWorker
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.FutureCallback
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 class VitalsTrackerApplication : Application() {
@@ -21,28 +26,40 @@ class VitalsTrackerApplication : Application() {
             modules(appModule)
         }
 
-        checkAndScheduleVitalsReminder()
+        // Retrieve saved work ID from SharedPreferences
+        val sharedPrefs = getSharedPreferences("VitalsPrefs", MODE_PRIVATE)
+        val workIdString = sharedPrefs.getString("VitalsWorkId", null)
+        val workId = workIdString?.let { UUID.fromString(it) }
+
+        checkAndScheduleVitalsReminder(context = this, workId = workId)
     }
 
-    private fun checkAndScheduleVitalsReminder() {
-        val workManager = WorkManager.getInstance(this)
+    private fun checkAndScheduleVitalsReminder(context: Context, workId: UUID?) {
+        val workManager = WorkManager.getInstance(context)
 
-        workManager.getWorkInfosForUniqueWork(ReminderWorker.WORK_NAME)
-            .addListener({
-                val workInfos = workManager.getWorkInfosForUniqueWork(ReminderWorker.WORK_NAME).get()
+        if (workId == null) {
+            Log.d("VitalsTrackerApplication", "No existing WorkId found. Scheduling new reminder.")
+            scheduleVitalsReminder()
+            return
+        }
 
-                val isAlreadyScheduled = workInfos.any {
-                    it.state == WorkInfo.State.ENQUEUED || it.state == WorkInfo.State.RUNNING
-                }
-                Log.d("VitalsTrackerApplication", "WorkInfos for ${ReminderWorker.WORK_NAME}: $workInfos is scheduled: $isAlreadyScheduled")
-                if (isAlreadyScheduled) {
-                    Log.d("VitalsTrackerApplication", "Vitals reminder already scheduled or running. Skipping.")
-                } else {
-                    Log.d("VitalsTrackerApplication", "Not scheduled yet. Proceeding to schedule.")
+        val future = workManager.getWorkInfoById(workId)
+
+        Futures.addCallback(future, object : FutureCallback<WorkInfo> {
+            override fun onSuccess(result: WorkInfo?) {
+                if (result == null || result.state.isFinished) {
+                    Log.d("VitalsTrackerApplication", "WorkInfo is null or finished. Rescheduling.")
                     scheduleVitalsReminder()
+                } else {
+                    Log.d("VitalsTrackerApplication", "WorkInfo is active (${result.state}). No need to reschedule.")
                 }
+            }
 
-            }, ContextCompat.getMainExecutor(this))
+            override fun onFailure(t: Throwable) {
+                Log.e("VitalsTrackerApplication", "Error checking WorkInfo. Scheduling fallback.", t)
+                scheduleVitalsReminder()
+            }
+        }, ContextCompat.getMainExecutor(context))
     }
 
     private fun scheduleVitalsReminder() {
@@ -55,8 +72,11 @@ class VitalsTrackerApplication : Application() {
 
         val workRequest = PeriodicWorkRequestBuilder<ReminderWorker>(
             5, TimeUnit.HOURS
-        ).setConstraints(constraints)
-            .build()
+        ).setConstraints(constraints).build()
+
+        val workId = workRequest.id
+        val sharedPrefs = getSharedPreferences("VitalsPrefs", MODE_PRIVATE)
+        sharedPrefs.edit { putString("VitalsWorkId", workId.toString()) }
 
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             ReminderWorker.WORK_NAME,
@@ -64,6 +84,6 @@ class VitalsTrackerApplication : Application() {
             workRequest
         )
 
-        Log.d("VitalsTrackerApplication", "Scheduled vitals reminder.")
+        Log.d("VitalsTrackerApplication", "Scheduled vitals reminder with ID: $workId")
     }
 }
