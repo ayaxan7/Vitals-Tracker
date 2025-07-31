@@ -2,10 +2,8 @@ package com.ayaan.vitalstracker
 
 import android.app.Application
 import android.util.Log
-import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
+import androidx.core.content.ContextCompat
+import androidx.work.*
 import com.ayaan.vitalstracker.di.appModule
 import com.ayaan.vitalstracker.worker.ReminderWorker
 import org.koin.android.ext.koin.androidContext
@@ -23,8 +21,28 @@ class VitalsTrackerApplication : Application() {
             modules(appModule)
         }
 
-        // Schedule periodic reminder work
-        scheduleVitalsReminder()
+        checkAndScheduleVitalsReminder()
+    }
+
+    private fun checkAndScheduleVitalsReminder() {
+        val workManager = WorkManager.getInstance(this)
+
+        workManager.getWorkInfosForUniqueWork(ReminderWorker.WORK_NAME)
+            .addListener({
+                val workInfos = workManager.getWorkInfosForUniqueWork(ReminderWorker.WORK_NAME).get()
+
+                val isAlreadyScheduled = workInfos.any {
+                    it.state == WorkInfo.State.ENQUEUED || it.state == WorkInfo.State.RUNNING
+                }
+                Log.d("VitalsTrackerApplication", "WorkInfos for ${ReminderWorker.WORK_NAME}: $workInfos is scheduled: $isAlreadyScheduled")
+                if (isAlreadyScheduled) {
+                    Log.d("VitalsTrackerApplication", "Vitals reminder already scheduled or running. Skipping.")
+                } else {
+                    Log.d("VitalsTrackerApplication", "Not scheduled yet. Proceeding to schedule.")
+                    scheduleVitalsReminder()
+                }
+
+            }, ContextCompat.getMainExecutor(this))
     }
 
     private fun scheduleVitalsReminder() {
@@ -38,15 +56,14 @@ class VitalsTrackerApplication : Application() {
         val workRequest = PeriodicWorkRequestBuilder<ReminderWorker>(
             5, TimeUnit.HOURS
         ).setConstraints(constraints)
-            .setInitialDelay(5, TimeUnit.HOURS) // Add initial delay
             .build()
 
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             ReminderWorker.WORK_NAME,
-            ExistingPeriodicWorkPolicy.REPLACE, // Changed from KEEP to REPLACE
+            ExistingPeriodicWorkPolicy.KEEP,
             workRequest
         )
 
-        Log.d("VitalsTrackerApplication", "Scheduled vitals reminder with REPLACE policy and 5-hour initial delay")
+        Log.d("VitalsTrackerApplication", "Scheduled vitals reminder.")
     }
 }
