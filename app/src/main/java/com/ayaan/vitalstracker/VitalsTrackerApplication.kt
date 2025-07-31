@@ -37,13 +37,16 @@ class VitalsTrackerApplication : Application() {
 
         val workRequest = PeriodicWorkRequestBuilder<ReminderWorker>(
             5, TimeUnit.HOURS
-        ).setConstraints(constraints).build()
+        ).setConstraints(constraints)
+            .setInitialDelay(5, TimeUnit.HOURS) // Add initial delay
+            .build()
+
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             ReminderWorker.WORK_NAME,
-            ExistingPeriodicWorkPolicy.KEEP,
+            ExistingPeriodicWorkPolicy.REPLACE, // Changed from KEEP to REPLACE
             workRequest
         )
 
-        Log.d("VitalsTrackerApplication", "Scheduled vitals reminder with KEEP policy")
+        Log.d("VitalsTrackerApplication", "Scheduled vitals reminder with REPLACE policy and 5-hour initial delay")
     }
 }
